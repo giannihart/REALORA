@@ -1,0 +1,30 @@
+{
+  "parties": {
+    "seller": "Maren Calder LLC",
+    "buyer": "Jonah Ellis and Priya Shah"
+  },
+  "premisesAddress": "184 Pacific Street, Apt 4B, Brooklyn, NY 11201",
+  "purchasePriceCents": 215000000,
+  "contractDate": "2026-10-08",
+  "deposit": {
+    "amountCents": 21500000,
+    "holderName": "Hartman & Wei LLP"
+  },
+  "financing": {
+    "type": "Conventional",
+    "mortgageAmountCents": 172000000,
+    "commitmentDeadline": "2026-12-15"
+  },
+  "closing": {
+    "onOrAbout": "2027-01-20",
+    "outsideDate": "2027-01-31"
+  },
+  "contingencies": [
+    { "name": "Mortgage commitment", "date": "2026-12-15" },
+    { "name": "Board approval", "date": "2026-12-01" },
+    { "name": "Inspection", "date": "2026-10-22" }
+  ],
+  "condoRider": true,
+  "inclusionsNotes": "Refrigerator, washer, dryer, and window treatments",
+  "exclusionsNotes": "Seller's dining table and artwork"
+}

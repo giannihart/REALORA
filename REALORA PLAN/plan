@@ -1,0 +1,158 @@
+You are building REALORA, a production-quality web application. Match the attached UI screenshots pixel-for-pixel in spirit and layout — same design language, same components, same copy where provided. This is not a landing page; it is a working two-sided real-estate platform (public marketplace + buyer portal + seller portal) with a shared demo dataset, a real deal state machine, and flows that connect the buyer and seller sides. Every button must do something. No lorem ipsum, no dead ends, no placeholder boxes.
+1. What REALORA is (product rules — never violate these in UI or copy)
+REALORA is an AI-native real-estate brokerage platform that represents both parties and orchestrates the entire transaction, from list to close, through AI agents.
+Seller fee is 1% total (traditional NYC total is ~5.5%). The seller may optionally check a box to offer +1% to a buyer's agent who brings the buyer; REALORA's revenue stays 1%.
+The platform is the hero. Never write copy that frames REALORA as "a better agent." Copy angle: the user does three things — set the price, choose the offer, sign — everything else is handled by the platform.
+Market: NYC townhouses and condos, Brooklyn + Manhattan. Listings also syndicate to MLS/RLS portals in the real business; in this app, REALORA's own marketplace is the surface.
+Buyers can buy direct with no buyer's agent ("Buy now" flow). Offers are structured term sheets (price, financing, down %, EMD, contingencies, close date) ranked for the seller by net proceeds and certainty, not price alone.
+The platform never holds escrow money (in copy: deposits are held by the seller's attorney's escrow). Attorneys draft contracts; the platform coordinates everyone and everything.
+Realora does not do tours. The platform does not conduct, host, staff, schedule, or book tours or showings of homes. No Realora person attends a viewing, ever. This is the model — a brokerage with no agent headcount doing in-person showings is a contradiction — and it is permanent: the absence of tour booking is by design, not a gap. Do not build it, do not spec it, do not leave UI placeholders or copy that promise it, and do not treat any tour-shaped hole in the data as a TODO.
+Keep the demo-honesty labels from the screenshots where they appear ("demo listing", "Demo preview", "Demo estimate only — not an appraisal or acceptance guarantee.", "Prototype decisions only").
+2. Tech stack (use exactly this unless impossible)
+Next.js 15 (App Router) + TypeScript (strict) + Tailwind CSS v4 (CSS-first configuration: @import "tailwindcss" + @theme inline design tokens — the canonical globals.css is provided in §3; start from it, extend it, never replace it).
+Font: Plus Jakarta Sans via next/font/google, exposed as the CSS variable --font-plus-jakarta and used for everything — wordmark, headings, body, UI.
+shadcn/ui primitives allowed for dialogs/drawers/inputs, but restyle them to the design system below — the app must NOT look like default shadcn.
+Framer Motion for subtle motion (page fades, card entrances, modal/drawer transitions, animated progress bars and number count-ups). Motion is quiet and premium, never bouncy.
+Lucide icons only (the screenshots use Lucide-style line icons).
+Map: the reference build renders the marketplace map as a static map image (a Manhattan street-map screenshot/export) recolored with the .realora-map-image CSS filter from §3, with price pins positioned absolutely by percentage coordinates from the seed data. Reproduce that approach — it is pixel-stable, needs no API key, and matches the screenshots. (A live MapLibre layer is an acceptable later upgrade; it is not required and must not change the visual result.)
+State: a typed demo store (React Context + useReducer, or Zustand) seeded from /src/data/seed.ts, persisted to localStorage, with a Reset demo action that restores the seed exactly.
+No backend. Put every external integration behind a typed service interface in /src/lib/services/ with a mock implementation (auth, payments/Stripe, e-sign, ID verification, ACRIS, RLS syndication, vendors) so real APIs can replace mocks without touching UI.
+Images: use the Unsplash photo URLs listed in §7 (they match the screenshot compositions). Use next/image with proper sizes. Never hotlink random images.
+3. Design system (extracted from the screenshots — treat as law)
+Canonical tokens — the founder's globals.css from the reference build, to be used verbatim as the starting stylesheet. Earlier drafts of this spec guessed at these values; this file overrides every hex and font mentioned anywhere else in this prompt. Vocabulary mapping for the rest of the spec: "ink / primary text" = --forest; "pine / dark surfaces" = --forest-deep; "ivory / page background" = --cream; "accent" = --lime. The thin styled scrollbars and the lime ::selection in this file are part of the design — keep them.
+@import "tailwindcss";
+
+:root {
+  --forest: #182772;
+  --forest-deep: #0b1f1a;
+  --cream: #fbf6f3;
+  --lime: #ccff00;
+  --muted: #6b7a74;
+  --warm: #f3eee9;
+  --line: #e6dfd8;
+  --sand: #ebe3db;
+}
+
+@theme inline {
+  --color-forest: var(--forest);
+  --color-forest-deep: var(--forest-deep);
+  --color-cream: var(--cream);
+  --color-lime: var(--lime);
+  --color-muted: var(--muted);
+  --color-warm: var(--warm);
+  --color-line: var(--line);
+  --color-sand: var(--sand);
+  --font-sans: var(--font-plus-jakarta);
+}
+
+html,
+body {
+  background: var(--cream);
+  color: var(--forest);
+}
+
+body {
+  font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+  min-height: 100%;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c9c0b6 transparent;
+}
+
+::selection {
+  background: var(--lime);
+  color: var(--forest);
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
+/* Static marketplace map — forest / cream recolor without an external map API */
+.realora-map-image {
+  filter: saturate(0.72) sepia(0.18) hue-rotate(72deg) brightness(1.04) contrast(1.02);
+}
+How the tokens are used
+Page background --cream; cards white #FFFFFF with 1px --line borders; alt section bands --warm; neutral chips and quiet pills --sand.
+Primary text and the wordmark: --forest. Dark surfaces — the NextStepCard, primary buttons, the active sidebar item, the Portal button: --forest-deep with cream/white text.
+--lime #ccff00 is the electric accent, used sparingly and always with --forest text on it: CTA buttons (Buy now, Schedule inspection), the active public-nav pill (Buy), the New Listing chip, the current timeline dot, progress highlights.
+Secondary text --muted.
+Status pills: Complete = bg #DFEDD8, text #2E5B34; In Progress = bg --sand, text --forest; the current timeline step = bg --lime, text --forest; Waiting = bg #F7EBC6, text #7A6420; New = bg --warm, text --forest; Price Cut chip = bg --forest-deep, text white; New Listing chip = bg --lime, text --forest.
+Typography
+Plus Jakarta Sans for everything. Wordmark: weight 800, all caps, tight letter-spacing (-0.02em). Headings: 700–800, tight tracking. Body/UI: 400/500/600, base 16px; secondary text 14–15px. Eyebrows ("YOUR NEXT STEP", "NEXT DEADLINE", "BUYER") are 12–13px, uppercase, letter-spacing 0.12em.
+Geometry & feel
+Card radius 20–24px; buttons and pills fully rounded (999px); inputs radius 14px.
+Borders: 1px --line on white cards; shadows extremely soft and warm: 0 1px 2px rgba(11,31,26,.04), 0 12px 32px rgba(11,31,26,.05).
+Spacing scale 4/8/12/16/24/32/48. Portal content column max-width ~920px; public pages max-width 1320px with 32px gutters.
+The overall feel: warm, calm, expensive, uncluttered. Generous whitespace. Nothing glows, nothing gradients except photo overlays.
+4. Global components (build once, reuse everywhere)
+PublicNav: REALORA wordmark left; center links Buy (active state = lime pill), Sell, Get a Mortgage, How It Works; right: Portal (dark pine pill with a lime circle containing an up-right arrow) + Sign up (white pill, hairline border). Sticky, ivory background with hairline bottom border.
+PortalSidebar (per role): role eyebrow ("BUYER" / "SELLER"); nav items with Lucide icons — Buyer: Home, Services, Documents, Financing, Progress, Messages. Seller: Home, Listing, Offers, Services, Documents, Progress, Messages. Active item = pine pill, white text, radius 14. Bottom block: Switch to seller / Switch to buyer (white pill button), then small text links Reset demo and Portal home.
+NextStepCard (dark pine card): lime eyebrow "YOUR NEXT STEP", large white heading (the single action), 1–2 lines of soft white/70 explanation, one lime pill CTA + optional lime-text due date, footnote "Your next step updates automatically when this is done." This is the product's signature component — it is derived from the deal state machine, never hardcoded per page.
+HandlingList ("Realora is handling it"): white task rows — title, one-line description, status pill right.
+ProgressBar: thin track #EFE9DC, pine fill, animated width; label format "4/10".
+DeadlineCard: eyebrow "NEXT DEADLINE", bold item + date.
+OfferTable + OfferCard (seller): exactly as screenshot 4, including the AI note line on each card and the "Prototype decisions only" tan pill.
+Timeline (progress pages): vertical line, dots (complete = pine filled; current = lime with soft halo; upcoming = pale), white milestone cards, status pills (Complete / In Progress / Upcoming), expandable current card with Responsible / Date / Next + action buttons.
+ListingCard: photo (radius 20), badge top-left (New Listing / Price Cut), heart toggle top-right of the body row, bold price, specs line "5 bds · 4.5 ba · 4,200 sqft — For Sale", muted address.
+MapPins: white price pills with ink text ("$15.3M", "$6.5M"…); selected pin = pine bg with lime text; clicking a pin highlights its card and vice versa.
+Gallery (listing page): hero left (~58%), right column = 2 photos + a 3D tour tile (photo bg, dark overlay, lime circle with cube icon, "3D tour", "Demo preview") + a Watch video tile (lime play circle, "Watch video", "Demo preview"); "View photos" white pill bottom-left of hero opens a lightbox grid.
+ConfirmDialog: for consequential actions (accept offer, submit offer, sign). Seller Offers page subheader states the rule: "Consequential decisions require an explicit confirmation step." Honor it everywhere.
+Toasts for completed actions; skeleton loaders on route transitions; empty states with real copy for Messages/Documents before content exists.
+5. Routes & screens (build all of these)
+Public
+/ — Home: PublicNav; hero with a big Plus Jakarta headline ("Sell your home for 1%. Keep the other ~$300,000."), address search input (typing an address jumps to /sell calculator prefilled), featured listings row (ListingCards from seed), "How it works" 3-step strip (List → Offers ranked by net → Close, attorneys + platform coordinate), a savings teaser band (dark pine, lime numbers), footer. Tasteful, photo-led, same palette.
+/buy — Search (screenshot 3): filter pill bar (location input "New York, NY", For Sale, Price, Beds & baths, Home type, More, Save search button); split view — MapLibre map left (~48%) with price pins, results right with header "6 homes in New York, NY" and a 2-column ListingCard grid. Filters actually filter the seed set; pin↔card hover/click sync; Save search persists and shows a toast.
+/listing/[id] — Listing detail (screenshot 1): Gallery; left column: chips (New Listing / "For Sale · demo listing"), price, address, specs line, "About this home" (2–3 paragraphs of real listing copy, fair-housing clean), facts grid (type, year built, lot, heating, taxes), monthly cost estimator mini-widget. Right rail (sticky): Buy now card — lime Buy now button + heart save button; caption exactly: "Purchase this home today, no real estate agent needed ever." Below: Offer guide card with "Demo estimate only — not an appraisal or acceptance guarantee." and 3 guide rows (suggested EMD, typical close, what sellers here weigh most). Buy now → starts the Offer Wizard (§6) for verified users, or the sign-up/verify flow first (mock).
+/sell — Seller landing + Net Sheet calculator: inputs (estimated price slider/input, neighborhood select, checkbox "Offer +1% to a buyer's agent to increase offer volume"); animated comparison: Traditional ~5.5% fee vs REALORA 1% (and 2% total if checkbox on) in dollars + "You keep $X more" in lime; CTA "Get your listing plan" → seller onboarding (mock multi-step: address → ACRIS-style property summary (from seed/lookup stub) → media scheduling → listing agreement e-sign mock → lands in Seller Portal with a draft listing).
+/how-it-works, /mortgage — simple, beautiful content pages in the same system (mortgage page: lender panel concept — directory + pre-approval upload mock; no referral-fee language anywhere).
+/auth — Sign up / Sign in (mock): email + magic-link style UI, role choice (I'm buying / I'm selling), verification tier explainer (ID check required before offering; ownership check before listing) with mock Persona-style verification steps. Completing auth drops the user into the correct portal with the demo deal attached.
+Buyer Portal (/portal/buyer/..., PortalSidebar role=BUYER)
+home (screenshot 2): property summary card (412 2nd Street, Park Slope — thumbnail, chip "Inspection and due diligence", sub "Property selected — offer preparation", "View property details" outline pill → /listing/412-2nd-street); row: DeadlineCard ("Inspection contingency · 2026-10-27") + Progress (4/10, ProgressBar); NextStepCard ("Review inspection report" — copy: "Open the report in Documents. Decide on repair requests or contingency next steps with your broker. Legal advice comes from counsel after legal review if needed." CTA Schedule inspection, "Due Oct 27"); HandlingList: "Title & settlement — Realora is coordinating title and escrow with the settlement team." (In progress), "Coordinate appraisal scheduling — Realora is handling this for you." (In progress), "Order title search — Waiting on title." (Waiting). "Coming up" mini-list under it (next 2 milestones, muted).
+services: vendor marketplace grid (Inspector, Photographer, Movers, Cleaners, Locksmith, Expediter) — cards with fixed prices, ratings, "Book" → booking modal (date/time) → creates a task, updates Home next-step/handling state, toast. Booked services list at top.
+documents: deal document vault — grouped list (Contract, Inspection report, Title, Disclosures, Closing), each row: icon, name, uploaded-by, date, status (Signed / Pending / For review), View (opens a document preview drawer with a realistic rendered doc mock). Upload button (mock, adds a doc).
+financing: lender + pre-approval status card, monthly payment calculator (price, down %, rate, term → PITI breakdown), underwriting milestone status tied to the deal state.
+progress (screenshot 5): "My progress" timeline. Seed milestones: 1 Buyer onboarding (Complete, 2026-09-08), 2 Offer submitted (Complete, 2026-10-09), 3 Offer accepted (Complete, 2026-10-12), 4 Earnest money deposit (Complete, 2026-10-14), 5 Inspection and due diligence (In Progress — Responsible: Alex Chen · Inspector; Date: Target 2026-10-24; Next: Attend inspection · await report; buttons "View related tasks", "View documents"), 6 Mortgage underwriting and appraisal (Upcoming, Target 2026-10-31), then 7 Title & closing prep, 8 Clear to close, 9 Closing day, 10 Deed recorded & keys (Upcoming). Header copy: "Chronological milestones from onboarding to closing. Dependencies stay realistic — financing and closing stay upcoming until diligence completes."
+messages: two-pane messaging (thread list: Seller side (via Realora), Inspector Alex Chen, Title team; conversation pane; composer). Sending a message appends it and triggers a canned contextual reply after ~1s (mock agent). Unread badges update the sidebar.
+Seller Portal (/portal/seller/..., PortalSidebar role=SELLER)
+home: same skeleton as buyer home but seller-flavored: listing summary card (412 2nd Street — "Live · 3 offers"), DeadlineCard ("Best & final deadline · 2026-10-23"), Progress (listing phase), NextStepCard ("Review 3 offers" → CTA to Offers), HandlingList (RLS syndication live on StreetEasy/Zillow, Media delivered, Tour feedback digest).
+listing: listing manager — gallery editor (photo order drag, virtual staging toggle labels), price + status controls, syndication status board (RLS ✓, StreetEasy ✓, Zillow ✓, Trulia ✓ with timestamps), tour schedule + feedback feed, the seller checkbox setting: "Offer 1% to a buyer's agent" (toggle, with explainer of what it costs/buys).
+offers (screenshot 4): subheader exactly: "Compare terms side by side. Consequential decisions require an explicit confirmation step." OfferTable (columns Buyer, Price, Financing, Down, EMD, Close, Expires, Status; Review action) + OfferCards with AI notes; "Open full terms" → full-terms drawer (all fields + net-to-seller math: price − REALORA 1% fee − concessions = net, animated); Accept / Counter / Decline actions → Accept requires ConfirmDialog; accepting sets the deal state machine forward (buyer portal progress + next steps change for the same deal — the demo store is shared).
+services, documents, progress, messages: mirror the buyer's, adapted (seller milestones: Listing prep → Live → Tours → Offers → Accepted → Contract → Diligence → Clear to close → Closing → Closed; seller documents incl. listing agreement, disclosures, lead paint).
+6. The deal state machine & the Offer Wizard (core logic — implement for real)
+Model the deal as a state machine in /src/lib/deal-machine.ts with states: INTAKE → PREP → LIVE → TOURS_OFFERS → ACCEPTED → CONTRACT → IN_CONTRACT → DILIGENCE → CLEAR_TO_CLOSE → CLOSING → POST_CLOSE, plus FELL_THROUGH with a reason code. Each state owns: the next step for buyer and seller (title, body, CTA, due), the handling tasks, and the milestones rendered on both progress pages. NextStepCard, HandlingList, ProgressBar counts (e.g. 4/10) and both Timelines must all derive from this one machine — change the state, both portals update.
+Offer Wizard (from Buy now or a listing CTA): 4 steps in a modal/full-page flow — (1) Terms: price, EMD $, proposed close date; (2) Financing: cash/conventional/jumbo, down %, contingency toggles (inspection, financing — note NY custom in helper text), pre-approval/proof-of-funds upload (mock, sets a "Verified funds" badge); (3) Review: full term sheet + net/certainty explainer; (4) Confirm (ConfirmDialog pattern) → Submitted state. The new offer appears instantly in Seller → Offers with an AI note generated by rule (cash+fast close → "Strongest certainty"; highest price + jumbo + long close → "Highest price is not the strongest offer — more risk and delays."; balanced → "Balanced price with standard contingencies.").
+Certainty scoring (deterministic, in /src/lib/scoring.ts): cash > financed; fewer contingencies, higher EMD %, shorter close, verified funds → higher score; labels: Strongest certainty / Competitive / Highest price. Seller table and cards sort by a combined rank but display the honest note per offer.
+Completing key CTAs advances the machine: e.g. buyer's "Schedule inspection" books the service and marks milestone 5's task done → buyer Home next step changes to "Review inspection report" done-state → next step becomes "Confirm attendance / await report"; keep the loop tight and visible.
+7. Seed data (use exactly; all dates 2026)
+Listings (/buy shows 6):
+18 Grove Street, West Village — $8,750,000 — 5 bd · 4.5 ba · 4,200 sqft — photo: modern white house with pool https://images.unsplash.com/photo-1512917774080-9991f1c4c750
+141 Greene Street, SoHo — $6,250,000 — 3 bd · 3 ba · 3,100 sqft — loft interior https://images.unsplash.com/photo-1502672260266-1c1ef2d93688 — New Listing
+520 West 28th Street, Chelsea — $15,250,000 — 4 bd · 4.5 ba · 3,900 sqft — luxury living room https://images.unsplash.com/photo-1600607687939-ce8a6c25118c
+78 Pierrepont Street, Brooklyn Heights — $6,450,000 — 5 bd · 4 ba · 4,600 sqft — brick house exterior https://images.unsplash.com/photo-1568605114967-8130f3a36994
+212 Carlton Avenue, Fort Greene — $4,995,000 — 4 bd · 3 ba · 3,150 sqft — https://images.unsplash.com/photo-1600585154340-be6161a56a0c — Price Cut
+367 Park Slope brownstone (fictional "88 Prospect Park West") — $5,600,000 — 5 bd · 4 ba · 4,050 sqft — https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde — New Listing
+Map pins (Manhattan-weighted, approximate coords fine): $15.3M (520 W 28th), $8.8M (Grove), $6.5M, $6.3M, $4.2M, $3.9M labels as in the screenshot.
+Demo deal property: 412 2nd Street, Park Slope, Brooklyn, NY 11215 — $4,190,000 — 4 beds · 3.5 baths · 3,400 sqft · Townhouse. Gallery photos: hero https://images.unsplash.com/photo-1564013799919-ab600027ffc6 (big shingled house, lawn), pool house https://images.unsplash.com/photo-1613490493576-7fde63acd811, interior https://images.unsplash.com/photo-1600210492486-724fe5c67fb0, living/patio (3D + video tiles) https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea.
+Seller offers on the demo deal (as screenshot 4): Buyer A — $6,250,000 — Conventional — 20% down — EMD $312,500 — Close 2026-11-24 — Expires 2026-10-22 — note "Balanced price with standard contingencies." Buyer B — $6,310,000 — Cash — 100% — EMD $400,000 — Close 2026-11-08 — Expires 2026-10-21 — note "Highest certainty — cash, short close, fewest contingencies." Buyer C — $6,400,000 — Jumbo — 30% — EMD $320,000 — Close 2026-12-15 — Expires 2026-10-23 — note "Highest price is not the strongest offer — more risk and delays." (Yes, offer prices exceed the $4.19M list in the screenshot mock — keep them as given; the demo deal's seller view is illustrative.) All status "New".
+People: Inspector — Alex Chen. Title team — "Title & settlement". Seller persona: "You (Seller)". Buyer persona: "You (Buyer)".
+8. Quality bar (this is what "flawless" means here)
+Pixel-faithful to the screenshots: same layout proportions (portal sidebar ~250px; gallery ratio; card paddings 24px), same copy strings where given, same visual hierarchy.
+Fully responsive: ≥1280px as screenshotted; tablet collapses the map/list split to stacked; mobile: sidebar becomes a top bar + bottom tab bar; tables become cards. Nothing may overflow or clip.
+Accessibility: semantic landmarks, focus-visible rings (lime outline), AA contrast (lime is never used for small text on ivory), aria-labels on icon buttons, keyboard-navigable dialogs/drawers.
+Performance: next/image everywhere, route-level code splitting, no layout shift on the gallery/map.
+Code quality: strict TS types for all entities (Listing, Offer, Deal, Task, Milestone, DocumentItem, ServiceVendor, Message), components under /src/components/{public,portal,shared}, no any, no dead code, README section explaining how to swap mock services for real APIs.
+Every interactive element works: hearts toggle + persist, filters filter, wizard validates (price > 0, EMD ≤ price, dates sane) with inline errors, toggles persist, Reset demo restores seed.
+9. Build order — execute in milestones, verify each before the next
+M1 — Scaffold + design system: Next.js/TS/Tailwind project, fonts, tokens as CSS variables + Tailwind theme, PublicNav, PortalSidebar, buttons/pills/cards primitives, demo store + seed skeleton, Reset demo. Done when: a blank portal page and a blank public page both look unmistakably like the screenshots' system.
+M2 — Public marketplace: /, /buy (map + filters + cards + pin sync), /listing/[id] (gallery, lightbox, Buy now card, Offer guide). Done when: screenshot 1 and 3 are reproducible side-by-side.
+M3 — Buyer portal: home (NextStepCard + HandlingList + deadline/progress), progress timeline, documents, financing, services, messages. Done when: screenshots 2 and 5 are reproducible and the inspection booking loop works end-to-end.
+M4 — Seller portal: home, listing manager (incl. syndication board + buyer-agent 1% toggle), offers (table + cards + full-terms drawer with net math), progress, documents, messages. Done when: screenshot 4 is reproducible.
+M5 — The connected loop: Offer Wizard from Buy now → offer lands in Seller Offers with correct AI note + certainty label → seller Accept (ConfirmDialog) advances the shared deal machine → both portals' next steps, timelines, and progress counts update consistently. Auth/verify mock flow + /sell Net Sheet calculator + seller onboarding → draft listing in seller portal. Done when: one person can play buyer and seller in two tabs and close the loop.
+M6 — Polish: motion pass, skeletons, empty states, responsive pass, a11y pass, README. Done when: the §8 quality bar holds on every route.
+Work milestone by milestone. After each milestone, summarize what was built, what to click to verify it, and any deviations from this spec (with reasons) before starting the next.

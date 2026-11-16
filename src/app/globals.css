@@ -1,0 +1,330 @@
+@import "tailwindcss";
+
+:root {
+  --forest: #102c25;
+  --forest-deep: #0b1f1a;
+  --cream: #fbf6f3;
+  --lime: #ccff00;
+  --muted: #6b7a74;
+  --warm: #f3eee9;
+  --line: #e6dfd8;
+  --sand: #ebe3db;
+}
+
+@theme inline {
+  --color-forest: var(--forest);
+  --color-forest-deep: var(--forest-deep);
+  --color-cream: var(--cream);
+  --color-lime: var(--lime);
+  --color-muted: var(--muted);
+  --color-warm: var(--warm);
+  --color-line: var(--line);
+  --color-sand: var(--sand);
+  --font-sans: var(--font-plus-jakarta);
+}
+
+html,
+body {
+  background: var(--cream);
+  color: var(--forest);
+}
+
+body {
+  font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+  min-height: 100%;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c9c0b6 transparent;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+::selection {
+  background: var(--lime);
+  color: var(--forest);
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
+.realora-range {
+  --range-fill: var(--forest);
+  --range-rest: var(--line);
+  --range-progress: 0%;
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.realora-range:hover {
+  --range-fill: var(--forest);
+}
+
+.realora-range:active {
+  --range-fill: var(--lime);
+}
+
+.realora-range:focus {
+  outline: none;
+}
+
+.realora-range:focus-visible {
+  outline: 2px solid var(--forest);
+  outline-offset: 3px;
+}
+
+.realora-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--range-fill) 0,
+    var(--range-fill) var(--range-progress),
+    var(--range-rest) var(--range-progress),
+    var(--range-rest) 100%
+  );
+}
+
+.realora-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -5px;
+  border: none;
+  border-radius: 50%;
+  background: var(--range-fill);
+  box-shadow: 0 0 0 2px var(--forest);
+}
+
+.realora-range:active::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px var(--forest);
+}
+
+.realora-range::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--range-rest);
+  border: none;
+}
+
+.realora-range::-moz-range-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--range-fill);
+  border: none;
+}
+
+.realora-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: var(--range-fill);
+  box-shadow: 0 0 0 2px var(--forest);
+}
+
+.realora-range:active::-moz-range-thumb {
+  box-shadow: 0 0 0 2px var(--forest);
+}
+
+/* Dual-thumb: transparent track (band is painted under the inputs) */
+.realora-range-dual {
+  pointer-events: none;
+  background: transparent !important;
+}
+
+.realora-range-dual::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+.realora-range-dual::-webkit-slider-thumb {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.realora-range-dual::-moz-range-track {
+  background: transparent;
+}
+
+.realora-range-dual::-moz-range-progress {
+  background: transparent;
+}
+
+.realora-range-dual::-moz-range-thumb {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Static marketplace map — forest / cream recolor without an external map API */
+.realora-map-image {
+  filter: saturate(0.72) sepia(0.18) hue-rotate(72deg) brightness(1.04) contrast(1.02);
+}
+
+.google-map-root,
+.apple-map-root {
+  height: 100%;
+  width: 100%;
+}
+
+.realora-map-pin {
+  position: absolute;
+  z-index: 1;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+  border-radius: 999px;
+  border: 1px solid #ccff00;
+  background: #ccff00;
+  color: #102c25;
+  padding: 0.375rem 0.625rem;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1;
+  box-shadow: 0 1px 2px rgb(16 44 37 / 0.18);
+  cursor: pointer;
+}
+
+.realora-map-pin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  border: 5px solid transparent;
+  border-top-width: 6px;
+  border-top-color: #ccff00;
+  transform: translateX(-50%);
+}
+
+.realora-map-pin.is-active,
+.realora-map-pin:hover {
+  background: #102c25;
+  border-color: #102c25;
+  color: #ccff00;
+}
+
+.realora-map-pin.is-active::after,
+.realora-map-pin:hover::after {
+  border-top-color: #102c25;
+}
+
+.realora-map-pin.is-sold {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #faf6ef;
+}
+
+.realora-map-pin.is-sold::after {
+  border-top-color: #dc2626;
+}
+
+.realora-map-pin.is-sold.is-active,
+.realora-map-pin.is-sold:hover {
+  background: #991b1b;
+  border-color: #991b1b;
+  color: #faf6ef;
+}
+
+.realora-map-pin.is-sold.is-active::after,
+.realora-map-pin.is-sold:hover::after {
+  border-top-color: #991b1b;
+}
+
+@keyframes hiw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hiw-rise {
+  animation: hiw-rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hiw-reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hiw-reveal-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hiw-float {
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hiw-float-left {
+  transform: translate3d(0, -50%, 0) rotate(-6deg);
+}
+
+.hiw-float-right {
+  transform: translate3d(0, -50%, 0) rotate(6deg);
+}
+
+.hiw-float-left.hiw-float-in,
+.hiw-float-right.hiw-float-in {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hiw-rise,
+  .hiw-reveal,
+  .hiw-float {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .hiw-float-left {
+    transform: translate3d(0, -50%, 0) rotate(-6deg) !important;
+  }
+
+  .hiw-float-right {
+    transform: translate3d(0, -50%, 0) rotate(6deg) !important;
+  }
+}
+
+@media print {
+  header,
+  aside,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+  .print-file {
+    color: #111;
+  }
+}
