@@ -156,64 +156,39 @@ export async function getApprovalsQueueAction(): Promise<ActionResult<ApprovalPa
       .select("*")
       .in("status", ["pending", "changes_requested"])
       .order("created_at", { ascending: true });
-    const packets: ApprovalPacket[] = [];
-    const countersignDocIds = new Set<string>();
-    for (const approval of rows ?? []) {
-      packets.push(await buildPacket(actor, approval));
-      if (approval.kind === "listing_agreement_countersign") {
-        const ctx = asRecord(approval.context);
-        if (typeof ctx.document_id === "string") countersignDocIds.add(ctx.document_id);
-      }
-    }
-
-    // Seller-signed agreements awaiting brokerage countersign — even if the
-    // listing_agreement_countersign approval kind isn't migrated yet.
+    // Seller-signed listing agreements must have a real countersign approval row.
+    // Create any missing ones (legacy Signed docs) before building the queue.
     const { data: awaiting } = await actor.admin
       .from("documents")
-      .select("*")
+      .select("id, deal_id, name, status")
       .eq("status", "Signed");
+    const pendingCountersignDeals = new Set(
+      (rows ?? [])
+        .filter((a) => a.kind === "listing_agreement_countersign")
+        .map((a) => a.deal_id),
+    );
+    const { insertApprovalRequest } = await import("@/lib/actions/approvals");
     for (const doc of awaiting ?? []) {
       if (!/listing agreement/i.test(doc.name) || !doc.deal_id) continue;
-      if (countersignDocIds.has(doc.id)) continue;
-      const { data: deal } = await actor.admin.from("deals").select("*").eq("id", doc.deal_id).maybeSingle();
-      if (!deal) continue;
-      const { data: listing } = await actor.admin
-        .from("listings")
-        .select("*")
-        .eq("id", deal.listing_id)
-        .maybeSingle();
-      const { data: property } = listing
-        ? await actor.admin.from("properties").select("*").eq("id", listing.property_id).maybeSingle()
-        : { data: null };
-      packets.push({
-        approval: {
-          id: `countersign:${doc.id}`,
-          deal_id: deal.id,
-          kind: "listing_agreement_countersign",
-          status: "pending",
-          context: { document_id: doc.id, synthetic: true },
-          requested_by: null,
-          decided_by: null,
-          decided_at: null,
-          note: null,
-          created_at: doc.created_at,
-        },
-        deal,
-        address: property?.address_line ?? deal.id.slice(0, 8),
-        listingPriceCents: Number(listing?.price_cents ?? 0),
-        triggeringEvent: null,
-        documents: [
-          {
-            id: doc.id,
-            name: doc.name,
-            status: doc.status,
-            kind: doc.kind,
-            acknowledged: isAcknowledgedDocument(doc),
-          },
-        ],
-        recommendation: { action: "Open embedded countersign for the brokerage signature." },
-        requestedByName: "Seller signature",
+      if (pendingCountersignDeals.has(doc.deal_id)) continue;
+      await insertApprovalRequest(actor.admin, {
+        dealId: doc.deal_id,
+        kind: "listing_agreement_countersign",
+        requestedBy: null,
+        context: { document_id: doc.id },
       });
+      pendingCountersignDeals.add(doc.deal_id);
+    }
+
+    const { data: refreshed } = await actor.admin
+      .from("approvals")
+      .select("*")
+      .in("status", ["pending", "changes_requested"])
+      .order("created_at", { ascending: true });
+
+    const packets: ApprovalPacket[] = [];
+    for (const approval of refreshed ?? []) {
+      packets.push(await buildPacket(actor, approval));
     }
 
     return { ok: true, data: packets };

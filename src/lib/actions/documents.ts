@@ -894,16 +894,12 @@ export async function executeNativeSignatureAction(input: {
     });
 
     if (input.roleKey === "seller") {
-      try {
-        await insertApprovalRequest(actor.admin, {
-          dealId,
-          kind: "listing_agreement_countersign",
-          requestedBy: actor.userId,
-          context: { document_id: doc.id },
-        });
-      } catch {
-        /* migration optional — queue also reads Signed documents */
-      }
+      await insertApprovalRequest(actor.admin, {
+        dealId,
+        kind: "listing_agreement_countersign",
+        requestedBy: actor.userId,
+        context: { document_id: doc.id },
+      });
     }
 
     if (input.roleKey === "brokerage") {

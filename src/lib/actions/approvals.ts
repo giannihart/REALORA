@@ -197,8 +197,8 @@ async function executeApproved(actor: Actor, approval: Tables<"approvals">) {
     );
     if (!result.ok) throw new DealActionError(result.code, result.message);
   }
-  // listing_agreement_countersign: approve only after the embedded countersign webhook
-  // advances the document to Fully executed — deciding here without signing is a no-op.
+  // listing_agreement_countersign — approve only after native countersign advances
+  // the document to Fully executed; deciding here without signing is a no-op.
 }
 
 export async function decideApprovalAction(

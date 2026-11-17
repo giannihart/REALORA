@@ -58,6 +58,7 @@ if (!cron || ["secret", "changeme", "change-me", "CRON_SECRET", "default"].inclu
   failures.push("CRON_SECRET is unset or a documented default.");
 }
 
+// Native SignatureCapture is the production e-sign path; Dropbox is parked/unselected.
 const dropbox = Boolean(process.env.DROPBOX_SIGN_API_KEY && process.env.DROPBOX_SIGN_CLIENT_ID);
 const persona = Boolean(process.env.PERSONA_API_KEY && process.env.PERSONA_TEMPLATE_ID);
 const stripe = Boolean(process.env.STRIPE_SECRET_KEY);
@@ -67,7 +68,6 @@ const twilio = Boolean(
   process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM_NUMBER,
 );
 
-if (!dropbox) failures.push("Dropbox Sign is in mock/unavailable mode (missing API key + client id).");
 if (!persona) failures.push("Persona is in mock/unavailable mode (missing API key + template).");
 if (!stripe) failures.push("Stripe is in mock/unavailable mode (missing STRIPE_SECRET_KEY).");
 if (!anthropic) failures.push("Anthropic is unavailable (missing ANTHROPIC_API_KEY).");
@@ -77,7 +77,11 @@ if (!twilio) failures.push("Twilio is unavailable (missing TWILIO_*).");
 if ((process.env.STRIPE_SECRET_KEY ?? "").startsWith("sk_test_")) {
   warnings.push("Stripe key is test-mode (sk_test_). Launch flip: live Connect charge.");
 }
-if (dropbox) warnings.push("Dropbox Sign is configured — confirm live mode vs test mode before go-live.");
+if (dropbox) {
+  warnings.push(
+    "Dropbox Sign keys are set but unused — platform documents use native SignatureCapture.",
+  );
+}
 if (persona) warnings.push("Persona is configured — confirm live inquiry vs sandbox before go-live.");
 
 if (url && anon && service) {

@@ -35,14 +35,6 @@ export function ApprovalsClient({
     decision: "approved" | "rejected" | "changes_requested",
     kind: ApprovalPacket["approval"]["kind"],
   ) {
-    if (id.startsWith("countersign:")) {
-      toast(
-        decision === "rejected"
-          ? "Dismissed for now — the agreement stays Signed until countersigned."
-          : "Use Countersign to complete the brokerage signature.",
-      );
-      return;
-    }
     if (kind === "listing_agreement_countersign" && decision === "approved") {
       toast("Open Countersign to complete the brokerage signature.");
       return;
