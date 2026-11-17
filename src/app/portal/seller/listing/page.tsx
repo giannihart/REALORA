@@ -24,7 +24,6 @@ function ListingManagerInner() {
   const listings = useAppData((s) => s.listings);
   const deal = useAppData((s) => s.deal);
   const user = useAppData((s) => s.user);
-  const documents = useAppData((s) => s.documents);
   const updateListing = useAppData((s) => s.updateListing);
   const toggleBuyerAgentFee = useAppData((s) => s.toggleBuyerAgentFee);
   const withdrawListing = useAppData((s) => s.withdrawListing);
@@ -76,41 +75,39 @@ function ListingManagerInner() {
   }, [at]);
 
   const [attention, setAttention] = useState<ListingAttentionStats | null>(null);
+  const [attentionStatus, setAttentionStatus] = useState<
+    "idle" | "loading" | "ok" | "error"
+  >("idle");
+  const [attentionRetry, setAttentionRetry] = useState(0);
 
   const listingId = listing?.id;
   useEffect(() => {
-    if (!listingId) return;
-    if (!isSupabaseDataMode()) {
+    if (!listingId) {
       setAttention(null);
+      setAttentionStatus("idle");
       return;
     }
     let cancelled = false;
+    setAttentionStatus("loading");
     void getListingAttentionAction(listingId).then((res) => {
-      if (cancelled || !res.ok) return;
+      if (cancelled) return;
+      if (!res.ok) {
+        setAttention(null);
+        setAttentionStatus("error");
+        return;
+      }
       setAttention(res.data);
+      setAttentionStatus("ok");
     });
     return () => {
       cancelled = true;
     };
-  }, [listingId]);
+  }, [listingId, attentionRetry]);
 
-  const demoAgreementSigned = useMemo(() => {
-    return documents.some(
-      (d) =>
-        /listing agreement/i.test(d.name) &&
-        (d.status === "Signed" ||
-          d.signStatus === "Signed" ||
-          d.signStatus === "signed" ||
-          d.signStatus === "completed"),
-    );
-  }, [documents]);
-
-  const agreementSigned =
-    attention?.agreementSigned ?? (published ? true : demoAgreementSigned);
-  const countersignPending =
-    attention?.agreementCountersignPending ?? false;
-  const brokerReviewDone =
-    attention?.brokerReviewDone ?? Boolean(published);
+  // Legal checklist states: attention record only. Fail closed when missing.
+  const agreementSigned = attention?.agreementSigned ?? false;
+  const countersignPending = attention?.agreementCountersignPending ?? false;
+  const brokerReviewDone = attention?.brokerReviewDone ?? false;
   const hasPhotos = attention?.hasPhotos ?? photos.length > 0;
   const buyerAgentOn = listing?.offerBuyerAgentPercent === 1;
 
@@ -124,9 +121,8 @@ function ListingManagerInner() {
     if (!listing) return [];
 
     const mediaDone = hasPhotos || Boolean(published);
-    const brokerDone = brokerReviewDone || Boolean(published);
     const readyForBroker = mediaDone && agreementSigned;
-    const readyToPublish = readyForBroker && brokerDone;
+    const readyToPublish = readyForBroker && brokerReviewDone;
 
     function status(
       done: boolean,
@@ -154,12 +150,8 @@ function ListingManagerInner() {
             : "Signed by you."
           : "Required before publishing.",
         responsibleParty: "Seller",
-        status: agreementSigned
-          ? "Complete"
-          : published
-            ? "Complete"
-            : "Action Required",
-        ...(agreementSigned || published
+        status: agreementSigned ? "Complete" : "Action Required",
+        ...(agreementSigned
           ? {}
           : {
               ctaLabel: "Sign your listing agreement",
@@ -178,13 +170,13 @@ function ListingManagerInner() {
       {
         id: "broker",
         title: "Broker review",
-        description: brokerDone
+        description: brokerReviewDone
           ? "Brokerage countersignature complete."
           : countersignPending
             ? "Brokerage countersignature in review."
             : "Broker of record countersigns before go-live.",
         responsibleParty: "Realora",
-        status: status(brokerDone, readyForBroker),
+        status: status(brokerReviewDone, readyForBroker),
       },
       {
         id: "live",
@@ -491,7 +483,28 @@ function ListingManagerInner() {
 
           <div className="space-y-4">
             <section className="space-y-3">
-              <h3 className="font-semibold text-forest">Listing launch</h3>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-semibold text-forest">Listing launch</h3>
+                {attentionStatus === "error" ||
+                (attentionStatus !== "loading" && !attention) ? (
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-forest underline decoration-forest/40 underline-offset-2 transition hover:decoration-forest"
+                    onClick={() => setAttentionRetry((n) => n + 1)}
+                  >
+                    Retry checklist status
+                  </button>
+                ) : null}
+              </div>
+              {attentionStatus === "loading" && !attention ? (
+                <p className="text-xs text-muted">Confirming agreement status…</p>
+              ) : null}
+              {attentionStatus === "error" ? (
+                <p className="text-xs text-muted">
+                  Agreement status could not be confirmed. Steps below stay
+                  unchecked until status loads.
+                </p>
+              ) : null}
               <Timeline stages={launchStages} readOnly />
             </section>
           </div>

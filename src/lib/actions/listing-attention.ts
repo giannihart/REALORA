@@ -470,3 +470,66 @@ export async function getListingAttentionAction(
     return wrapError(error);
   }
 }
+
+/** Public-safe counts only — no party, offer, or guidance fields. */
+export type PublicListingAttention = {
+  viewsTotal: number;
+  views30d: number;
+  savesCurrent: number;
+  saves30d: number;
+};
+
+/**
+ * Read view/save counts for a public listing page.
+ * Does not require auth and returns only aggregate numbers.
+ */
+export async function getPublicListingAttentionAction(
+  listingId: string,
+): Promise<ActionResult<PublicListingAttention>> {
+  try {
+    if (!listingId) return fail("validation", "listingId is required.");
+    const admin = createServiceRoleClient();
+    const { listing } = await resolveListingRow(admin, listingId);
+    const deal = await resolveDealForListing(admin, listing.id);
+
+    let viewsTotal = 0;
+    let views30d = 0;
+    let saves30d = 0;
+    const since30 = daysAgoIso(30);
+
+    if (deal) {
+      const { data: events } = await admin
+        .from("events")
+        .select("type, created_at")
+        .eq("deal_id", deal.id)
+        .in("type", ["listing.viewed", "listing.saved"]);
+
+      for (const ev of events ?? []) {
+        if (ev.type === "listing.viewed") {
+          viewsTotal += 1;
+          if (ev.created_at >= since30) views30d += 1;
+        }
+        if (ev.type === "listing.saved" && ev.created_at >= since30) {
+          saves30d += 1;
+        }
+      }
+    }
+
+    const { count } = await admin
+      .from("saved_homes")
+      .select("id", { count: "exact", head: true })
+      .eq("listing_id", listing.id);
+
+    return {
+      ok: true,
+      data: {
+        viewsTotal,
+        views30d,
+        savesCurrent: count ?? 0,
+        saves30d,
+      },
+    };
+  } catch (error) {
+    return wrapError(error);
+  }
+}

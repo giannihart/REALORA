@@ -538,7 +538,12 @@ export function SearchFilters({
         : filters.bedsExact && filters.beds < 5
           ? `${filters.beds} bd`
           : `${filters.beds}+ bd`;
-  const bathWord = filters.baths != null ? `${filters.baths}+ ba` : "Any ba";
+  const bathWord =
+    filters.baths == null
+      ? "Any ba"
+      : filters.baths === 4
+        ? "4+ ba"
+        : `${filters.baths} ba`;
   const bedLabel = bedsFilled ? `${bedWord}, ${bathWord}` : "Beds & baths";
 
   const typesFilled = types.length > 0;
@@ -800,7 +805,7 @@ export function SearchFilters({
                   active={filters.baths === n}
                   onClick={() => onChange({ ...filters, baths: n })}
                 >
-                  {n == null ? "Any" : `${n}+`}
+                  {n == null ? "Any" : n === 4 ? "4+" : String(n)}
                 </Chip>
               ))}
             </div>

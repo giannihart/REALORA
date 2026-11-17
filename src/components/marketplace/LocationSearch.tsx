@@ -15,7 +15,7 @@ export function LocationSearch({
   placement = "bottom",
   listRoot,
   className,
-  placeholder = "City, neighborhood, address",
+  placeholder = "City, neighborhood, or address",
   commitOnly = false,
 }: {
   value: string;
@@ -95,7 +95,7 @@ export function LocationSearch({
       className={cn(
         "absolute z-20 rounded-2xl border border-line bg-white p-4 shadow-xl",
         placement === "top" ? "bottom-full left-0 mb-2" : "left-0 top-full mt-2",
-        listRoot ? "w-full" : "w-[min(calc(100vw-2rem),26rem)]",
+        listRoot || bare ? "w-full" : "w-[min(calc(100vw-2rem),26rem)]",
       )}
     >
       <div className="space-y-1">
@@ -139,7 +139,7 @@ export function LocationSearch({
       ref={rootRef}
       className={cn(
         "relative w-full",
-        bare ? "min-w-0" : "min-w-[16rem] shrink-0 sm:w-72 lg:w-80",
+        bare ? "flex min-w-0 items-center" : "min-w-[16rem] shrink-0 sm:w-72 lg:w-80",
         className,
       )}
     >
@@ -191,7 +191,7 @@ export function LocationSearch({
           "relative z-[21] w-full text-sm outline-none placeholder:text-muted",
           bare
             ? cn(
-                "h-7 bg-transparent p-0 font-semibold text-forest placeholder:font-medium",
+                "h-5 bg-transparent p-0 font-medium leading-5 text-forest placeholder:font-medium",
                 hasText ? "pr-7" : "pr-0",
               )
             : cn(

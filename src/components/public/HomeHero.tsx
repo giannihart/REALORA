@@ -29,6 +29,7 @@ export const HOMEPAGE_SHOWCASE: Listing[] = [
     lotSqft: 1_800,
     heating: "Radiator",
     taxes: 12_400,
+    badge: "New Listing",
     photos: [
       photo("1600585154340-be6161a56a0c"),
       photo("1600566753086-00f18fb6b3ea"),
@@ -93,6 +94,7 @@ export const HOMEPAGE_SHOWCASE: Listing[] = [
     lotSqft: 0,
     heating: "Central",
     taxes: 9_800,
+    badge: "Price Cut",
     photos: [
       photo("1600607687939-ce8a6c25118c"),
       photo("1560448204-e02f11c3d0e2"),
@@ -125,6 +127,7 @@ export const HOMEPAGE_SHOWCASE: Listing[] = [
     lotSqft: 2_000,
     heating: "Radiator",
     taxes: 18_600,
+    badge: "New Listing",
     photos: [
       photo("1600585154526-990dced4db0d"),
       photo("1613490493576-7fde63acd811"),
@@ -189,6 +192,7 @@ export const HOMEPAGE_SHOWCASE: Listing[] = [
     lotSqft: 1_900,
     heating: "Radiator",
     taxes: 14_200,
+    badge: "Price Cut",
     photos: [
       photo("1600047509807-ba8f99d2cdde"),
       photo("1600585154340-be6161a56a0c"),
@@ -253,6 +257,7 @@ export const HOMEPAGE_SHOWCASE: Listing[] = [
     lotSqft: 0,
     heating: "Central",
     taxes: 8_900,
+    badge: "New Listing",
     photos: [
       photo("1605276374104-dee2a0ed3cd6"),
       photo("1600566753086-00f18fb6b3ea"),
@@ -285,6 +290,7 @@ export const HOMEPAGE_SHOWCASE: Listing[] = [
     lotSqft: 0,
     heating: "Central",
     taxes: 24_800,
+    badge: "Price Cut",
     photos: [
       photo("1512917774080-9991f1c4c750"),
       photo("1600607687939-ce8a6c25118c"),
@@ -424,7 +430,7 @@ export function HomeHero() {
         <h1 className="sr-only">The modern way to buy & sell a home</h1>
         <p
           aria-hidden="true"
-          className="relative z-30 px-4 text-center font-sans text-[2.75rem] font-medium leading-[0.88] tracking-[-0.04em] text-forest pointer-events-none sm:text-6xl lg:px-8 lg:text-[7.25rem]"
+          className="relative z-30 px-4 text-center font-sans text-[2.75rem] font-semibold leading-[0.88] tracking-[-0.04em] text-forest pointer-events-none sm:text-6xl lg:px-8 lg:text-[7.25rem]"
         >
           The modern way to
         </p>
@@ -468,7 +474,7 @@ export function HomeHero() {
         <p
           aria-hidden="true"
           className={cn(
-            "relative z-30 px-4 text-center font-sans text-[2.75rem] font-medium leading-[0.88] tracking-[-0.04em] text-forest pointer-events-none sm:text-6xl lg:px-8 lg:text-[7.25rem]",
+            "relative z-30 px-4 text-center font-sans text-[2.75rem] font-semibold leading-[0.88] tracking-[-0.04em] text-forest pointer-events-none sm:text-6xl lg:px-8 lg:text-[7.25rem]",
             hasFan ? "-mt-14 sm:-mt-16 lg:-mt-20" : "mt-1 sm:mt-2",
           )}
         >

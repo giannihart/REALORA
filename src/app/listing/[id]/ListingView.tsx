@@ -38,35 +38,8 @@ function viewerKey(): string {
 
 const ABOUT_WORD_CUTOFF = 80;
 
-function isDisclaimerNote(paragraph: string) {
-  return /this is a (demo listing|recorded demo)|fictional samples|prototype document|investor walkthrough/i.test(
-    paragraph,
-  );
-}
-
-function scrubAboutChrome(paragraph: string) {
-  return paragraph
-    .replace(/\bthis demo file\b/gi, "this listing")
-    .replace(/\bthe demo file\b/gi, "the listing")
-    .replace(/\bdemo listing file\b/gi, "listing file")
-    .replace(/\bdemo listing\b/gi, "listing")
-    .replace(/\bdemo model\b/gi, "planning model")
-    .replace(/\bdemo staging\b/gi, "staging")
-    .replace(/\bdemo sale\b/gi, "sale")
-    .replace(/\brecorded demo\b/gi, "recorded")
-    .replace(/\bfictional samples\b/gi, "illustrative figures")
-    .replace(/\bprototype\b/gi, "listing")
-    .replace(/\bsample\b/gi, "planning")
-    .replace(/\b\(DEMO\)\b/g, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
-
 function aboutParagraphs(listing: Listing) {
-  const lead = listing.about
-    .filter((paragraph) => !isDisclaimerNote(paragraph))
-    .map(scrubAboutChrome)
-    .filter(Boolean);
+  const lead = listing.about.map((paragraph) => paragraph.trim()).filter(Boolean);
 
   const kind = listing.type.toLowerCase();
   const beds =
@@ -136,29 +109,16 @@ function statusLabel(listing: Listing) {
   return "For Sale";
 }
 
-function daysOnMarket(listing: Listing) {
-  const at = listing.createdAt ?? listing.syndication[0]?.at;
-  if (at) {
-    const day = at.slice(0, 10);
-    const a = new Date(`${day}T00:00:00`).getTime();
-    const b = new Date("2026-10-30T00:00:00").getTime();
-    const days = Math.max(0, Math.round((b - a) / 86_400_000));
-    if (days > 0) return days;
-  }
-  return demoStat(listing.id, "days", 3, 42);
-}
-
-function demoStat(id: string, salt: string, min: number, max: number) {
-  let n = 2166136261;
-  for (const c of `${id}:${salt}`) {
-    n ^= c.charCodeAt(0);
-    n = Math.imul(n, 16777619);
-  }
-  return min + (Math.abs(n) % (max - min + 1));
-}
-
-function mlsNumber(id: string) {
-  return `RORA-${demoStat(id, "mls", 10_000_000, 99_999_999)}`;
+/** Days since real created/published timestamp. Null when no timestamp exists. */
+function daysOnMarket(listing: Listing): number | null {
+  const at = listing.createdAt ?? listing.syndication.find((s) => s.at)?.at;
+  if (!at) return null;
+  const day = at.slice(0, 10);
+  const a = new Date(`${day}T00:00:00`).getTime();
+  if (Number.isNaN(a)) return null;
+  const now = new Date();
+  const b = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return Math.max(0, Math.round((b - a) / 86_400_000));
 }
 
 function StatHint({ label, hint }: { label: string; hint: string }) {
@@ -187,6 +147,10 @@ export function ListingView({ id, initial }: { id: string; initial?: Listing | n
   const saved = savedIds.includes(id);
   const toggleSave = useAppData((s) => s.toggleSaved);
   const [wizard, setWizard] = useState(false);
+  const [attention, setAttention] = useState<{
+    views30d: number;
+    saves30d: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!listing || !isSupabaseDataMode()) return;
@@ -200,6 +164,28 @@ export function ListingView({ id, initial }: { id: string; initial?: Listing | n
       cancelled = true;
     };
   }, [listing?.id, listing?.status]);
+
+  useEffect(() => {
+    if (!listing) return;
+    if (!isSupabaseDataMode()) {
+      setAttention({ views30d: 0, saves30d: 0 });
+      return;
+    }
+    let cancelled = false;
+    void import("@/lib/actions/listing-attention").then(({ getPublicListingAttentionAction }) => {
+      void getPublicListingAttentionAction(listing.id).then((res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          setAttention({ views30d: res.data.views30d, saves30d: res.data.saves30d });
+        } else {
+          setAttention({ views30d: 0, saves30d: 0 });
+        }
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [listing?.id]);
 
   if (!listing) {
     return (
@@ -215,8 +201,8 @@ export function ListingView({ id, initial }: { id: string; initial?: Listing | n
   const labels = listing.badge ? [listing.badge] : [];
   const amenities = listing.stagingLabels ?? [];
   const dom = daysOnMarket(listing);
-  const views = demoStat(listing.id, "views", 640, 9_800);
-  const saves = demoStat(listing.id, "saves", 12, 186) + (saved ? 1 : 0);
+  const views = attention?.views30d ?? null;
+  const saves = attention?.saves30d ?? null;
 
   return (
     <div className="bg-cream">
@@ -313,7 +299,9 @@ export function ListingView({ id, initial }: { id: string; initial?: Listing | n
                     value={`${formatNumber(listing.lotSqft)} sqft`}
                   />
                 ) : null}
-                <Fact label="Days on market" value={String(dom)} />
+                {dom != null ? (
+                  <Fact label="Days on market" value={String(dom)} />
+                ) : null}
                 <Fact label="Neighborhood" value={listing.neighborhood} />
                 <Fact label="HOA" value="None" />
               </dl>
@@ -321,30 +309,49 @@ export function ListingView({ id, initial }: { id: string; initial?: Listing | n
 
             <section className="mt-12">
               <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
-                <p className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-semibold tracking-tight text-forest tabular-nums">
-                    {formatNumber(dom)}
-                  </span>
-                  <span className="text-[15px] text-muted">
-                    {dom === 1 ? "day" : "days"} on Realora
-                  </span>
-                </p>
-                <span className="hidden h-4 w-px self-center bg-line sm:block" aria-hidden />
-                <p className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-semibold tracking-tight text-forest tabular-nums">
-                    {formatNumber(views)}
-                  </span>
-                  <StatHint label="views" hint="Total views in last 30 days." />
-                </p>
-                <span className="hidden h-4 w-px self-center bg-line sm:block" aria-hidden />
-                <p className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-semibold tracking-tight text-forest tabular-nums">
-                    {formatNumber(saves)}
-                  </span>
-                  <StatHint label="saves" hint="Total saves in last 30 days." />
-                </p>
+                {dom != null ? (
+                  <p className="flex items-baseline gap-1.5">
+                    <span className="text-2xl font-semibold tracking-tight text-forest tabular-nums">
+                      {formatNumber(dom)}
+                    </span>
+                    <span className="text-[15px] text-muted">
+                      {dom === 1 ? "day" : "days"} on Realora
+                    </span>
+                  </p>
+                ) : null}
+                {views != null ? (
+                  <>
+                    {dom != null ? (
+                      <span
+                        className="hidden h-4 w-px self-center bg-line sm:block"
+                        aria-hidden
+                      />
+                    ) : null}
+                    <p className="flex items-baseline gap-1.5">
+                      <span className="text-2xl font-semibold tracking-tight text-forest tabular-nums">
+                        {formatNumber(views)}
+                      </span>
+                      <StatHint label="views" hint="Total views in last 30 days." />
+                    </p>
+                  </>
+                ) : null}
+                {saves != null ? (
+                  <>
+                    {dom != null || views != null ? (
+                      <span
+                        className="hidden h-4 w-px self-center bg-line sm:block"
+                        aria-hidden
+                      />
+                    ) : null}
+                    <p className="flex items-baseline gap-1.5">
+                      <span className="text-2xl font-semibold tracking-tight text-forest tabular-nums">
+                        {formatNumber(saves)}
+                      </span>
+                      <StatHint label="saves" hint="Total saves in last 30 days." />
+                    </p>
+                  </>
+                ) : null}
               </div>
-              <p className="mt-4 text-sm text-muted">MLS # {mlsNumber(listing.id)}</p>
             </section>
 
             <section className="mt-10">
@@ -421,10 +428,7 @@ export function ListingView({ id, initial }: { id: string; initial?: Listing | n
             </div>
 
             {listing.status === "closed" ? null : (
-              <OfferGuide
-                listPrice={listing.price}
-                daysOnMarket={dom}
-              />
+              <OfferGuide listPrice={listing.price} daysOnMarket={dom} />
             )}
           </aside>
         </div>
@@ -542,11 +546,17 @@ function OfferGuide({
   daysOnMarket,
 }: {
   listPrice: number;
-  daysOnMarket: number;
+  daysOnMarket: number | null;
 }) {
   const homeValue = useMemo(() => {
     const factor =
-      daysOnMarket <= 7 ? 1.03 : daysOnMarket <= 30 ? 1.0 : 0.97;
+      daysOnMarket == null
+        ? 1.0
+        : daysOnMarket <= 7
+          ? 1.03
+          : daysOnMarket <= 30
+            ? 1.0
+            : 0.97;
     return Math.round(listPrice * factor);
   }, [listPrice, daysOnMarket]);
 
@@ -587,7 +597,8 @@ function OfferGuide({
           {formatPrice(homeValue)}
         </p>
         <p className="mt-1 text-xs text-muted">
-          List price {formatPrice(listPrice)} · {daysOnMarket} days on market
+          List price {formatPrice(listPrice)}
+          {daysOnMarket != null ? ` · ${daysOnMarket} days on market` : ""}
         </p>
       </div>
 

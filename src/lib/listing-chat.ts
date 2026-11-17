@@ -17,25 +17,15 @@ const OFF_TOPIC_REPLY =
 const STEERING =
   /\b(good schools?|school district|school quality|crime rate|is it safe|safe neighborhood|dangerous area|for (kids|children|families|couples|singles)|family-friendly|who should live|demographics?)\b/i;
 
-function hashStat(id: string, salt: string, min: number, max: number) {
-  let n = 2166136261;
-  for (const c of `${id}:${salt}`) {
-    n ^= c.charCodeAt(0);
-    n = Math.imul(n, 16777619);
-  }
-  return min + (Math.abs(n) % (max - min + 1));
-}
-
-function daysOnMarket(listing: Listing) {
-  const at = listing.createdAt ?? listing.syndication[0]?.at;
-  if (at) {
-    const day = at.slice(0, 10);
-    const a = new Date(`${day}T00:00:00`).getTime();
-    const b = new Date("2026-10-30T00:00:00").getTime();
-    const days = Math.max(0, Math.round((b - a) / 86_400_000));
-    if (days > 0) return days;
-  }
-  return hashStat(listing.id, "days", 3, 42);
+function daysOnMarket(listing: Listing): number | null {
+  const at = listing.createdAt ?? listing.syndication.find((s) => s.at)?.at;
+  if (!at) return null;
+  const day = at.slice(0, 10);
+  const a = new Date(`${day}T00:00:00`).getTime();
+  if (Number.isNaN(a)) return null;
+  const now = new Date();
+  const b = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return Math.max(0, Math.round((b - a) / 86_400_000));
 }
 
 function statusLabel(listing: Listing) {
@@ -91,7 +81,6 @@ export function listingFactPack(listing: Listing) {
     hoa,
     ppsf,
     daysOnMarket: daysOnMarket(listing),
-    mls: `RORA-${hashStat(listing.id, "mls", 10_000_000, 99_999_999)}`,
     photos: listing.photos.length,
     amenities: listing.stagingLabels ?? [],
     about: listing.about,
@@ -118,7 +107,9 @@ export function listingFactText(listing: Listing) {
     `Year built ${facts.yearBuilt}. Heating: ${facts.heating}. Annual taxes in the file: ${formatPrice(facts.taxes)}.`,
     hoaLine,
     lotLine,
-    `Days on Realora: ${facts.daysOnMarket}. MLS ${facts.mls}. ${facts.photos} photos.`,
+    facts.daysOnMarket != null
+      ? `Days on Realora: ${facts.daysOnMarket}. ${facts.photos} photos.`
+      : `${facts.photos} photos.`,
     `Illustrative monthly payment at 20% down, 6.5%, 30-year: about ${formatPrice(facts.monthlyEstimate)}, including taxes and insurance${facts.hoa ? " and HOA" : ""}. Not a loan offer.`,
     facts.amenities.length ? `Amenities / staging: ${facts.amenities.join(", ")}.` : "",
     "Listing copy:",
@@ -300,12 +291,14 @@ export function answerListingQuestion(
 
   if (has(q, /\b(status|sold|available|for sale|pending|in contract|days on)\b/)) {
     bits.push(
-      `Status is ${facts.status}, with ${facts.daysOnMarket} days on Realora.`,
+      facts.daysOnMarket != null
+        ? `Status is ${facts.status}, with ${facts.daysOnMarket} days on Realora.`
+        : `Status is ${facts.status}.`,
     );
   }
 
   if (has(q, /\b(mls)\b/)) {
-    bits.push(`The MLS number is ${facts.mls}.`);
+    bits.push("No MLS number is stored on this listing.");
   }
 
   if (has(q, /\b(offer|bid|how much should i|win|chance)\b/)) {
@@ -325,7 +318,7 @@ export function answerListingQuestion(
   }
 
   if (has(q, /\b(describe|overview|tell me|about this|what's it like|whats it like|summary)\b/)) {
-    const lead = listing.about.find((paragraph) => !/this is a (demo listing|recorded demo)|fictional samples|investor walkthrough/i.test(paragraph));
+    const lead = listing.about.find((paragraph) => paragraph.trim());
     bits.push(
       lead ??
         `A ${facts.beds}-bedroom ${facts.type.toLowerCase()} of about ${formatNumber(facts.sqft)} square feet at ${listing.address}.`,

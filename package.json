@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/assert-server-boundary.mjs && next build",
+    "build": "node scripts/assert-server-boundary.mjs && node scripts/check-agreement-template.mjs && next build",
+    "check:agreement-template": "node scripts/check-agreement-template.mjs",
     "start": "next start",
     "lint": "eslint",
     "analyze": "ANALYZE=true next build",

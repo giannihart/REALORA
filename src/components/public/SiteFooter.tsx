@@ -76,7 +76,10 @@ export function SiteFooter({ inColumn = false }: { inColumn?: boolean }) {
               <NycSkylineMark className="pointer-events-none absolute bottom-0 left-0 aspect-[1850/332] w-full text-forest/20" />
               <div className="relative z-[1] max-w-md">
                 <h2 className="text-[2rem] font-semibold leading-[1.1] tracking-tight text-forest sm:text-[2.35rem] md:text-[2.5rem]">
-                  Sell for 1%. Keep the other {formatPrice(keep)}.
+                  <span className="whitespace-nowrap">
+                    Sell for 1%. Keep {formatPrice(keep)}
+                  </span>{" "}
+                  more with Realora.
                 </h2>
                 <p className="mt-4 text-[15px] leading-6 text-forest/80">
                   A traditional brokerage takes about 5.5%. REALORA is only 1%, handling the sale from listing to close.
@@ -123,18 +126,75 @@ export function SiteFooter({ inColumn = false }: { inColumn?: boolean }) {
           </div>
         ) : null}
 
-        <div className="rounded-[28px] bg-forest-deep px-6 py-8 text-cream sm:px-8 sm:py-10 md:px-12 md:py-12">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0">
-              <Link href="/" className={cn("inline-flex items-center", focusRing)} aria-label="Realora home">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/realoralogo-lime.svg" alt="REALORA" className="h-7 w-auto sm:h-8" />
-              </Link>
-              <nav aria-label="Footer" className="mt-6">
-                <ul className="flex flex-wrap items-center gap-x-1 gap-y-2">
-                  {FOOTER_NAV.map((item) => (
-                    <li key={`${item.href}-${item.label}`}>
-                      <Link href={item.href} className={navLink}>
+        <div className="overflow-hidden rounded-[28px] bg-forest-deep text-cream">
+          <div className="px-6 pt-8 sm:px-8 sm:pt-10 md:px-12 md:pt-12">
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0">
+                <nav aria-label="Footer">
+                  <ul className="flex flex-wrap items-center gap-x-1 gap-y-2">
+                    {FOOTER_NAV.map((item) => (
+                      <li key={`${item.href}-${item.label}`}>
+                        <Link href={item.href} className={navLink}>
+                          {item.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              </div>
+              <nav aria-label="Social" className="lg:pt-1">
+                <ul className="flex items-center gap-2">
+                  {SOCIAL_LINKS.map((item) => (
+                    <li key={item.href}>
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={item.label}
+                        className={cn(
+                          "flex h-10 w-10 items-center justify-center text-cream transition hover:text-lime",
+                          focusRing,
+                        )}
+                      >
+                        <span
+                          aria-hidden
+                          className="block h-6 w-6 bg-current"
+                          style={{
+                            maskImage: `url(${item.src})`,
+                            WebkitMaskImage: `url(${item.src})`,
+                            maskSize: "contain",
+                            WebkitMaskSize: "contain",
+                            maskRepeat: "no-repeat",
+                            WebkitMaskRepeat: "no-repeat",
+                            maskPosition: "center",
+                            WebkitMaskPosition: "center",
+                          }}
+                        />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </div>
+
+            <div className="mt-8 border-t border-white/[0.12] pt-8">
+              <div className="space-y-3 text-[13px] leading-[1.6] text-cream/60">
+                <p>{LICENSING}</p>
+                <p>{ESTIMATES}</p>
+                <p>{FAIR_HOUSING}</p>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-col gap-3 border-t border-white/[0.12] pt-6 text-[13px] text-cream/50 sm:flex-row sm:items-center sm:justify-between">
+              <p>© 2026 REALORA. All rights reserved.</p>
+              <nav aria-label="Legal">
+                <ul className="flex flex-wrap gap-x-4 gap-y-2">
+                  {LEGAL_LINKS.map((item) => (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={cn("text-cream/70 transition hover:text-cream", focusRing)}
+                      >
                         {item.label}
                       </Link>
                     </li>
@@ -142,65 +202,19 @@ export function SiteFooter({ inColumn = false }: { inColumn?: boolean }) {
                 </ul>
               </nav>
             </div>
-            <nav aria-label="Social" className="lg:pt-1">
-              <ul className="flex items-center gap-2">
-                {SOCIAL_LINKS.map((item) => (
-                  <li key={item.href}>
-                    <a
-                      href={item.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={item.label}
-                      className={cn(
-                        "flex h-10 w-10 items-center justify-center text-cream transition hover:text-lime",
-                        focusRing,
-                      )}
-                    >
-                      <span
-                        aria-hidden
-                        className="block h-6 w-6 bg-current"
-                        style={{
-                          maskImage: `url(${item.src})`,
-                          WebkitMaskImage: `url(${item.src})`,
-                          maskSize: "contain",
-                          WebkitMaskSize: "contain",
-                          maskRepeat: "no-repeat",
-                          WebkitMaskRepeat: "no-repeat",
-                          maskPosition: "center",
-                          WebkitMaskPosition: "center",
-                        }}
-                      />
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
           </div>
 
-          <div className="mt-8 border-t border-white/[0.12] pt-8">
-            <div className="space-y-3 text-[13px] leading-[1.6] text-cream/60">
-              <p>{LICENSING}</p>
-              <p>{ESTIMATES}</p>
-              <p>{FAIR_HOUSING}</p>
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-col gap-3 border-t border-white/[0.12] pt-6 text-[13px] text-cream/50 sm:flex-row sm:items-center sm:justify-between">
-            <p>© 2026 REALORA. All rights reserved.</p>
-            <nav aria-label="Legal">
-              <ul className="flex flex-wrap gap-x-4 gap-y-2">
-                {LEGAL_LINKS.map((item) => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn("text-cream/70 transition hover:text-cream", focusRing)}
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+          {/* Oversized neon wordmark, clipped at mid-letter. */}
+          <div className="relative mt-10 aspect-[10/1] w-full overflow-hidden" aria-hidden>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/realoralogo-lime.svg"
+              alt=""
+              className={cn(
+                "pointer-events-none absolute top-0 h-[200%] w-auto max-w-none -translate-x-1/2 origin-top select-none",
+                inColumn ? "left-[50.5%] scale-[1.01]" : "left-1/2 scale-[0.97]",
+              )}
+            />
           </div>
         </div>
       </div>
